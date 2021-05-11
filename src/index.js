@@ -1,3 +1,4 @@
+const { request, response } = require('express');
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 
@@ -33,23 +34,41 @@ app.post('/account', (request, response) => {
     return response.status(400).json({ error: 'Cpf já utilizado' });
   }
 
+  const id = uuidv4();
   customers.push({
     cpf,
     name,
-    id: uuidv4(),
+    id: id,
     statement: [],
   });
   return response.status(201).json({
     message: 'Conta criada com sucesso',
     name: name,
     cpf: cpf,
-    id: customers.id,
+    id: id,
   });
 });
 
 app.get('/statement', verifyExistsAccountCPF, (request, response) => {
   const { customer } = request;
   return response.json(customer.statement);
+});
+
+app.post('/deposit', verifyExistsAccountCPF, (request, response) => {
+  const { description, amount } = request.body;
+
+  const { customer } = request;
+
+  const statementOperation = {
+    description,
+    amount,
+    created_date: new Date(),
+    type: 'credit',
+  };
+
+  customer.statement.push(statementOperation);
+
+  return response.status(201).send(customer.statement);
 });
 
 app.listen(3333);
